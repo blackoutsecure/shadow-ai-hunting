@@ -240,24 +240,6 @@ These configuration states progressively remove human approval from the loop. Se
 │ sandbox  │  │ Isolated runtime  │  │ Model allowlists │
 └──────────┘  └───────────────────┘  └──────────────────┘
 ```
-
-This repo fills the gap between what Defender discovers natively (agents, MCP servers, auto-approve status) and the complete local artifact surface (vector DBs, memory files, model caches, containers, API keys).
-
-### Key Milestones
-
-| Product | Status | Date |
-|---------|--------|------|
-| Agent 365 | GA | May 1, 2026 |
-| Agent 365 SDK | GA | June 2, 2026 |
-| Defender Local AI Agent Discovery | Preview | June 2, 2026 |
-| Defender AI Runtime Protection | Preview | June 2, 2026 |
-| MXC (Execution Containers) | Early Preview | June 2, 2026 |
-| Windows 365 for Agents | Public Preview | May 2026 |
-| Purview DSPM for AI | GA | Mid-June 2026 |
-| GitHub Enterprise AI Controls | GA | February 26, 2026 |
-
----
-
 ## Repository Structure
 
 ```
