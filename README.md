@@ -55,14 +55,7 @@ You'll see every device talking to AI APIs.
 
 ### Licensing Requirements
 
-| Capability | Minimum |
-|-----------|---------|
-| Defender Advanced Hunting | Defender for Endpoint Plan 2 |
-| Intune Remediations | Microsoft 365 E3 |
-| Defender AI Agent Discovery | Defender for Endpoint Plan 2 |
-| Agent 365 Shadow AI page | M365 E3 + Frontier preview |
-| Purview DSPM for AI | M365 E5 or Agent 365            |
-| Sentinel (optional) | Microsoft Sentinel + MDE connector |
+Defender for Endpoint, Agent 365, Intune
 
 ---
 
