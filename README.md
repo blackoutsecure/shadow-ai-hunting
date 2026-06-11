@@ -53,25 +53,6 @@ You'll see every device talking to AI APIs.
 
 ---
 
-## Coverage Matrix
-
-| Artifact | Defender Native | KQL (this repo) | Intune (this repo) | Agent 365 |
-|----------|:-:|:-:|:-:|:-:|
-| Claude Code | Preview | `03` | ✓ | Roadmap |
-| GitHub Copilot CLI | Preview | `03` | ✓ | Roadmap |
-| Cursor / Windsurf | Partial | `03` | ✓ | — |
-| Aider | — | `03` | ✓ | — |
-| ChromaDB on disk | — | `01` | ✓ | — |
-| FAISS indexes | — | `02` | ✓ | — |
-| Ollama runtime | — | `04` `06` | ✓ | — |
-| vLLM / LM Studio | — | `04` `05` `06` | ✓ | — |
-| Docker AI containers | — | `05` | ✓ | — |
-| Agent memory files | — | `03` | ✓ | — |
-| MCP server configs | Preview | `03` | ✓ | Emerging |
-| .env with API keys | — | `07` | ✓ | — |
-| HuggingFace cache | — | `04` | ✓ | — |
-| AI network traffic | Partial | `08` | — | — |
-
 ### Licensing Requirements
 
 | Capability | Minimum |
