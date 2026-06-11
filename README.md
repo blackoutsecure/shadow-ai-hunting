@@ -237,17 +237,6 @@ shadow-ai-hunting/
 
 ---
 
-## Requirements
-
-| Tool | Minimum License |
-|------|----------------|
-| Defender Advanced Hunting | Defender for Endpoint Plan 2 |
-| Intune Remediations | Microsoft 365 E3 |
-| Defender AI Agent Discovery | Defender for Endpoint Plan 2 |
-| Sentinel (optional) | Microsoft Sentinel + MDE connector |
-
----
-
 ## Contributing
 
 1. Fork the repo
