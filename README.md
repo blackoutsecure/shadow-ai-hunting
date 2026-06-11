@@ -61,7 +61,7 @@ You'll see every device talking to AI APIs.
 | Intune Remediations | Microsoft 365 E3 |
 | Defender AI Agent Discovery | Defender for Endpoint Plan 2 |
 | Agent 365 Shadow AI page | M365 E3 + Frontier preview |
-| Purview DSPM for AI | M365 E5 or Agent 365 ($15/user/mo) |
+| Purview DSPM for AI | M365 E5 or Agent 365            |
 | Sentinel (optional) | Microsoft Sentinel + MDE connector |
 
 ---
@@ -191,7 +191,7 @@ These configuration states progressively remove human approval from the loop. Se
 | **VS Code Copilot** | `chat.tools.autoApprove: true` | Repo `.vscode/settings.json` can activate on workspace trust |
 | **GitHub Copilot** | `--autopilot` CLI flag | Approval-free issue → code → PR loop |
 
-**Defender detection:** Local AI Agent Discovery (Preview) surfaces auto-approve status per agent.
+**Defender detection:** Local AI Agent Discovery surfaces auto-approve status per agent.
 
 ---
 
@@ -199,7 +199,7 @@ These configuration states progressively remove human approval from the loop. Se
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│  AGENT 365 — Control Plane (GA May 2026)             │
+│  AGENT 365 — Control Plane                           │
 │  Registry · Access Control · Shadow AI · Policy      │
 └──────────────────┬───────────────────────────────────┘
                    │
