@@ -1,0 +1,100 @@
+// Detection: Shadow AI Network Traffic Baseline
+// Description: Baseline query to identify all network traffic to
+//              known AI provider APIs and services. Run this first
+//              to understand the scope of AI tool usage across your
+//              managed fleet before deploying targeted detections.
+// MITRE: T1567 (Exfiltration Over Web Service), T1071.001 (Web Protocols)
+// Severity: Informational (baseline)
+// Tables: DeviceNetworkEvents
+// Minimum License: Defender for Endpoint Plan 2
+// Author: shadow-ai-hunting
+// Last Updated: 2026-06-10
+
+let AI_Domains = dynamic([
+    // OpenAI
+    "api.openai.com", "openai.com", "chat.openai.com",
+    "chatgpt.com",
+    // Anthropic
+    "api.anthropic.com", "anthropic.com", "claude.ai",
+    "console.anthropic.com",
+    // Google
+    "gemini.google.com", "generativelanguage.googleapis.com",
+    "aistudio.google.com",
+    // DeepSeek
+    "api.deepseek.com", "chat.deepseek.com",
+    // Perplexity
+    "api.perplexity.ai", "perplexity.ai",
+    // HuggingFace
+    "huggingface.co", "api-inference.huggingface.co",
+    // Cohere
+    "api.cohere.ai", "cohere.com",
+    // Mistral
+    "api.mistral.ai",
+    // xAI / Grok
+    "api.x.ai",
+    // OpenRouter (aggregator)
+    "openrouter.ai",
+    // Together AI
+    "api.together.xyz",
+    // Groq
+    "api.groq.com",
+    // Replicate
+    "api.replicate.com",
+    // Cursor
+    "api2.cursor.sh", "cursor.sh",
+    // Codeium / Windsurf
+    "server.codeium.com", "windsurf.com",
+    // Copilot
+    "copilot-proxy.githubusercontent.com",
+    "api.githubcopilot.com"
+]);
+DeviceNetworkEvents
+| where Timestamp > ago(24h)
+| where RemoteUrl has_any (AI_Domains)
+    or RemoteUrl has_any (
+        "openai", "anthropic", "claude.ai",
+        "gemini.google", "deepseek",
+        "huggingface", "perplexity",
+        "cursor.sh", "codeium"
+    )
+| extend AIProvider = case(
+    RemoteUrl has "openai" or RemoteUrl has "chatgpt", "OpenAI",
+    RemoteUrl has "anthropic" or RemoteUrl has "claude", "Anthropic",
+    RemoteUrl has "gemini" or RemoteUrl has "generativelanguage", "Google Gemini",
+    RemoteUrl has "deepseek", "DeepSeek",
+    RemoteUrl has "perplexity", "Perplexity",
+    RemoteUrl has "huggingface", "HuggingFace",
+    RemoteUrl has "cohere", "Cohere",
+    RemoteUrl has "mistral", "Mistral",
+    RemoteUrl has "x.ai", "xAI / Grok",
+    RemoteUrl has "openrouter", "OpenRouter",
+    RemoteUrl has "together", "Together AI",
+    RemoteUrl has "groq", "Groq",
+    RemoteUrl has "replicate", "Replicate",
+    RemoteUrl has "cursor", "Cursor IDE",
+    RemoteUrl has "codeium" or RemoteUrl has "windsurf", "Windsurf / Codeium",
+    RemoteUrl has "copilot" or RemoteUrl has "githubcopilot", "GitHub Copilot",
+    "Other AI Service"
+)
+| extend CallingProcess = InitiatingProcessFileName
+| summarize
+    Connections = count(),
+    DataSentBytes = sum(SentBytes),
+    DataReceivedBytes = sum(ReceivedBytes),
+    UniqueDevices = dcount(DeviceName),
+    UniqueUsers = dcount(InitiatingProcessAccountName),
+    Processes = make_set(CallingProcess, 10),
+    SampleUrls = make_set(RemoteUrl, 5)
+    by AIProvider
+| extend DataSentMB = round(DataSentBytes / 1048576.0, 2)
+| extend DataReceivedMB = round(DataReceivedBytes / 1048576.0, 2)
+| project
+    AIProvider,
+    Connections,
+    UniqueDevices,
+    UniqueUsers,
+    DataSentMB,
+    DataReceivedMB,
+    Processes,
+    SampleUrls
+| order by Connections desc

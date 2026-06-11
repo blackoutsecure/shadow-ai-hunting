@@ -1,0 +1,55 @@
+// Detection: FAISS Vector Index File Discovery
+// Description: Discovers FAISS index files and related vector store
+//              artifacts on managed endpoints. FAISS stores binary
+//              index files (.faiss) and pickle docstore mappings (.pkl).
+// MITRE: T1213 (Data from Information Repositories)
+// Severity: Medium
+// Tables: DeviceFileEvents
+// Minimum License: Defender for Endpoint Plan 2
+// Author: shadow-ai-hunting
+// Last Updated: 2026-06-10
+
+DeviceFileEvents
+| where Timestamp > ago(30d)
+| where FileName endswith ".faiss"
+    or FileName == "index.faiss"
+    or FileName == "index.pkl"
+    or FileName endswith ".index"
+    or (FileName endswith ".npy" and FolderPath has_any ("faiss", "vector", "embeddings"))
+    or FolderPath has_any (
+        "faiss_index",
+        "faiss_store",
+        "vector_store",
+        "vector_db",
+        "embeddings"
+    )
+| extend ArtifactType = case(
+    FileName endswith ".faiss", "FAISS Binary Index",
+    FileName == "index.pkl", "FAISS Docstore Pickle",
+    FileName endswith ".npy", "NumPy Vector Array",
+    FileName endswith ".index", "Generic Vector Index",
+    "FAISS Related File"
+)
+| summarize
+    FileCount = count(),
+    ArtifactTypes = make_set(ArtifactType),
+    TotalSizeBytes = sum(FileSize),
+    FirstSeen = min(Timestamp),
+    LastSeen = max(Timestamp)
+    by DeviceName,
+       InitiatingProcessAccountName,
+       FolderPath,
+       FileName
+| extend TotalSizeMB = round(TotalSizeBytes / 1048576.0, 2)
+| project
+    Timestamp = LastSeen,
+    DeviceName,
+    User = InitiatingProcessAccountName,
+    FolderPath,
+    FileName,
+    ArtifactTypes,
+    FileCount,
+    TotalSizeMB,
+    FirstSeen,
+    LastSeen
+| order by TotalSizeMB desc

@@ -1,0 +1,542 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { detections, severityColors, categoryIcons } from '../data/detections';
+import { SITE } from '../lib/config';
+---
+
+<Layout title={SITE.title}>
+  <Nav />
+
+  <header class="hero section">
+    <div class="container">
+      <div class="hero-badge">Open Source Detection Toolkit</div>
+      <h1 class="hero-title">Discover Local AI Agent Infrastructure on Endpoints</h1>
+      <p class="hero-subtitle">
+        KQL queries for Defender XDR. Intune remediation scripts. Clear coverage for vector DBs, agent
+        memory files, Docker containers, and local LLM runtimes.
+      </p>
+      <div class="hero-stats" role="list" aria-label="Toolkit highlights">
+        <div class="stat" role="listitem"><span class="stat-num">8</span><span class="stat-label">KQL Detections</span></div>
+        <div class="stat" role="listitem"><span class="stat-num">7</span><span class="stat-label">Artifact Categories</span></div>
+        <div class="stat" role="listitem"><span class="stat-num">20+</span><span class="stat-label">AI Tools Covered</span></div>
+      </div>
+      <div class="hero-actions">
+        <a href="#detections" class="btn btn-primary">Browse Detections</a>
+        <a href={SITE.repoUrl} class="btn btn-secondary" target="_blank" rel="noopener">View on GitHub</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="section" id="quickstart">
+    <div class="container">
+      <h2>Quick Start</h2>
+      <p class="section-copy">
+        Paste this query in Defender XDR Advanced hunting to baseline AI service traffic right now.
+      </p>
+      <div class="code-block panel">
+        <div class="code-header">
+          <span>KQL - Shadow AI Network Baseline</span>
+          <button class="copy-btn" data-copy="quickstart-kql">Copy</button>
+        </div>
+        <pre id="quickstart-kql"><code>DeviceNetworkEvents
+| where Timestamp > ago(24h)
+| where RemoteUrl has_any ("openai.com","anthropic.com","claude.ai",
+    "huggingface.co","api.deepseek.com","cursor.sh","codeium")
+| summarize Connections = count()
+    by DeviceName, InitiatingProcessAccountName, RemoteUrl
+| order by Connections desc</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="detections">
+    <div class="container">
+      <h2>Detection Queries</h2>
+      <p class="section-copy">Copy-paste any query into Defender Advanced Hunting or Sentinel.</p>
+
+      {detections.map((d) => (
+        <article class="detection-card panel" id={`detection-${d.id}`}>
+          <div class="detection-header">
+            <div class="detection-meta">
+              <span class="detection-number">{d.number}</span>
+              <span class="detection-icon">{categoryIcons[d.category]}</span>
+              <h3 class="detection-title">{d.title}</h3>
+            </div>
+            <div class="detection-badges">
+              <span class="badge" style={`background: ${severityColors[d.severity]}20; color: ${severityColors[d.severity]}; border: 1px solid ${severityColors[d.severity]}55;`}>
+                {d.severity}
+              </span>
+              <span class="badge badge-category">{d.category}</span>
+            </div>
+          </div>
+          <p class="detection-desc">{d.description}</p>
+          <div class="detection-info">
+            <span>Table: {d.tables.join(', ')}</span>
+            <span>MITRE: {d.mitre.join(', ')}</span>
+            <span>File: {d.file}</span>
+          </div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>KQL</span>
+              <button class="copy-btn" data-copy={`kql-${d.id}`}>Copy</button>
+            </div>
+            <pre id={`kql-${d.id}`}><code>{d.kql}</code></pre>
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="section" id="intune">
+    <div class="container">
+      <h2>Intune Fleet Scanner</h2>
+      <p class="section-copy">
+        Use the proactive remediation script to scan managed endpoints for local AI artifacts.
+      </p>
+      <article class="detection-card panel">
+        <div class="detection-header">
+          <div class="detection-meta">
+            <span class="detection-icon">🛡️</span>
+            <h3 class="detection-title">Detect-ShadowAI.ps1</h3>
+          </div>
+          <span class="badge intune-badge">Intune Remediation</span>
+        </div>
+        <p class="detection-desc">
+          Comprehensive scanner for vector DBs, agent memory, runtimes, containers, listeners, and key files.
+        </p>
+        <div class="detection-info">
+          <span>Deploy: Intune -> Devices -> Scripts and remediations</span>
+          <span>Run as: System and 64-bit PowerShell</span>
+          <span>Schedule: Daily initially, then weekly</span>
+        </div>
+        <a
+          href={`${SITE.repoUrl}/blob/main/detections/intune/Detect-ShadowAI.ps1`}
+          class="btn btn-secondary"
+          target="_blank"
+          rel="noopener"
+        >
+          View Script on GitHub
+        </a>
+      </article>
+    </div>
+  </section>
+
+  <section class="section" id="coverage">
+    <div class="container">
+      <h2>Coverage Matrix</h2>
+      <p class="section-copy">What each Microsoft tool discovers natively versus what this repo adds.</p>
+      <div class="table-wrap panel">
+        <table>
+          <thead>
+            <tr>
+              <th>Artifact</th>
+              <th>Defender Native</th>
+              <th>This Repo (KQL)</th>
+              <th>This Repo (Intune)</th>
+              <th>Agent 365</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Claude Code</td><td>Preview</td><td>03</td><td>Yes</td><td>Planned</td></tr>
+            <tr><td>Copilot CLI</td><td>Preview</td><td>03</td><td>Yes</td><td>Planned</td></tr>
+            <tr><td>Cursor / Windsurf / Aider</td><td>Partial</td><td>03</td><td>Yes</td><td>No</td></tr>
+            <tr><td>ChromaDB on disk</td><td>No</td><td>01</td><td>Yes</td><td>No</td></tr>
+            <tr><td>FAISS indexes</td><td>No</td><td>02</td><td>Yes</td><td>No</td></tr>
+            <tr><td>Ollama runtime</td><td>No</td><td>04, 06</td><td>Yes</td><td>No</td></tr>
+            <tr><td>vLLM Docker</td><td>No</td><td>05, 06</td><td>Yes</td><td>No</td></tr>
+            <tr><td>Agent memory files</td><td>No</td><td>03</td><td>Yes</td><td>No</td></tr>
+            <tr><td>.env with API keys</td><td>No</td><td>07</td><td>Yes</td><td>No</td></tr>
+            <tr><td>AI network traffic</td><td>Partial</td><td>08</td><td>NA</td><td>NA</td></tr>
+            <tr><td>MCP server configs</td><td>Preview</td><td>03</td><td>Yes</td><td>Partial</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="fingerprints">
+    <div class="container">
+      <h2>Artifact Fingerprints</h2>
+      <p class="section-copy">Exact files and directories left by common local AI tooling.</p>
+      <div class="fingerprint-grid">
+        <article class="fingerprint-card panel">
+          <h3>ChromaDB</h3>
+          <pre><code>chroma_data/
+|- chroma.sqlite3
+`- {'{UUID}'}/
+   |- data_level0.bin
+   |- header.bin
+   |- length.bin
+   `- link_lists.bin</code></pre>
+        </article>
+        <article class="fingerprint-card panel">
+          <h3>FAISS</h3>
+          <pre><code>faiss_store/
+|- index.faiss
+|- index.pkl
+`- *.npy (optional)</code></pre>
+        </article>
+        <article class="fingerprint-card panel">
+          <h3>Ollama</h3>
+          <pre><code>~/.ollama/
+|- models/manifests/
+`- blobs/sha256-{'{hash}'}</code></pre>
+          <p class="fp-meta">Port: <code>11434</code>. Process: <code>ollama</code>.</p>
+        </article>
+        <article class="fingerprint-card panel">
+          <h3>Claude Code Memory</h3>
+          <pre><code>project/
+|- CLAUDE.md
+|- CLAUDE.local.md
+|- MEMORY.md
+`- memories/
+
+~/.claude/
+|- CLAUDE.md
+`- agent-memory/</code></pre>
+        </article>
+        <article class="fingerprint-card panel">
+          <h3>Cursor</h3>
+          <pre><code>project/
+|- .cursorrules
+`- .cursor/rules/
+   |- backend.mdc
+   |- frontend.mdc
+   `- testing.mdc</code></pre>
+        </article>
+        <article class="fingerprint-card panel">
+          <h3>Aider</h3>
+          <pre><code>project/
+|- .aider.conf.yml
+|- .aider.chat.history.md
+|- .aider.input.history
+`- .env
+
+~/.aider.conf.yml</code></pre>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="governance">
+    <div class="container">
+      <h2>Microsoft Governance Stack</h2>
+      <p class="section-copy">How these controls align, and where this repo adds visibility.</p>
+      <div class="stack-diagram">
+        <div class="stack-row stack-top">
+          <div class="stack-box panel">
+            <strong>Agent 365</strong>
+            <span>Registry, access control, and visibility</span>
+          </div>
+        </div>
+        <div class="stack-row">
+          <div class="stack-box panel"><strong>Defender</strong><span>Discovery and detection</span></div>
+          <div class="stack-box panel"><strong>Entra ID</strong><span>Identity and conditional access</span></div>
+          <div class="stack-box panel"><strong>Intune</strong><span>Policy and remediation</span></div>
+        </div>
+        <div class="stack-row">
+          <div class="stack-box stack-highlight panel">
+            <strong>This Repo</strong>
+            <span>ChromaDB, FAISS, Ollama, vLLM, Docker, Agent memory, API keys</span>
+          </div>
+        </div>
+        <div class="stack-row">
+          <div class="stack-box panel"><strong>Purview DSPM for AI</strong><span>DLP and audit controls</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
+
+<script>
+  document.querySelectorAll('.copy-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const targetId = btn.getAttribute('data-copy');
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!target) return;
+
+      const text = target.textContent || '';
+
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'Copy';
+          btn.classList.remove('copied');
+        }, 1800);
+      } catch {
+        btn.textContent = 'Failed';
+        setTimeout(() => {
+          btn.textContent = 'Copy';
+        }, 1800);
+      }
+    });
+  });
+</script>
+
+<style>
+  .hero {
+    text-align: center;
+    padding-top: 4.9rem;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--surface), transparent 45%) 0%, transparent 100%);
+  }
+
+  .hero-badge {
+    display: inline-block;
+    margin-bottom: 1.2rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--accent), transparent 55%);
+    background: color-mix(in srgb, var(--accent), transparent 85%);
+    color: var(--accent-soft);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+  }
+
+  .hero-title {
+    margin: 0 auto 1rem;
+    max-width: 880px;
+    font-size: clamp(2rem, 5vw, 3.25rem);
+    font-family: 'Space Grotesk', var(--font-sans);
+    background: linear-gradient(105deg, var(--text) 25%, var(--accent-soft) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .hero-subtitle {
+    max-width: 780px;
+    margin: 0 auto 2rem;
+    color: var(--text-soft);
+    font-size: 1.03rem;
+  }
+
+  .hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-num {
+    display: block;
+    color: var(--accent-soft);
+    font-size: 2.2rem;
+    line-height: 1;
+    font-weight: 800;
+  }
+
+  .stat-label {
+    display: block;
+    margin-top: 0.3rem;
+    color: var(--text-muted);
+    font-size: 0.74rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .hero-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  .section-copy {
+    color: var(--text-soft);
+    margin-bottom: 1.25rem;
+  }
+
+  .detection-card {
+    margin-bottom: 1rem;
+    padding: 1.2rem;
+  }
+
+  .detection-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.7rem;
+  }
+
+  .detection-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+  }
+
+  .detection-number {
+    border-radius: var(--radius-sm);
+    padding: 0.1rem 0.45rem;
+    border: 1px solid var(--border);
+    background: var(--surface-soft);
+    color: var(--accent-soft);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .detection-icon {
+    font-size: 1.1rem;
+  }
+
+  .detection-title {
+    font-size: 1.02rem;
+  }
+
+  .detection-badges {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .badge-category {
+    border: 1px solid var(--border);
+    background: var(--surface-soft);
+    color: var(--text-soft);
+  }
+
+  .intune-badge {
+    border: 1px solid color-mix(in srgb, var(--success), transparent 35%);
+    background: color-mix(in srgb, var(--success), transparent 86%);
+    color: var(--success);
+  }
+
+  .detection-desc {
+    color: var(--text-soft);
+    margin-bottom: 0.8rem;
+  }
+
+  .detection-info {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem 1.2rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    padding: 0.35rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.87rem;
+  }
+
+  th,
+  td {
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    padding: 0.62rem 0.7rem;
+    white-space: nowrap;
+  }
+
+  th {
+    color: var(--text-muted);
+    font-size: 0.73rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .fingerprint-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  }
+
+  .fingerprint-card {
+    padding: 1rem;
+  }
+
+  .fingerprint-card h3 {
+    margin-bottom: 0.65rem;
+    font-size: 0.98rem;
+  }
+
+  .fingerprint-card pre {
+    font-size: 0.79rem;
+  }
+
+  .fp-meta {
+    margin-top: 0.6rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+
+  .stack-diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    max-width: 920px;
+    margin: 0 auto;
+  }
+
+  .stack-row {
+    display: flex;
+    gap: 0.65rem;
+  }
+
+  .stack-box {
+    flex: 1;
+    padding: 0.85rem;
+    text-align: center;
+  }
+
+  .stack-box strong {
+    display: block;
+    font-size: 0.88rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .stack-box span {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .stack-top .stack-box {
+    background: color-mix(in srgb, var(--accent), transparent 86%);
+    border-color: color-mix(in srgb, var(--accent), transparent 60%);
+  }
+
+  .stack-highlight {
+    border-color: color-mix(in srgb, var(--success), transparent 30%);
+    background: color-mix(in srgb, var(--success), transparent 88%);
+  }
+
+  @media (max-width: 760px) {
+    .hero {
+      padding-top: 3.5rem;
+    }
+
+    .hero-stats {
+      gap: 1.2rem;
+    }
+
+    .stat-num {
+      font-size: 1.7rem;
+    }
+
+    .stack-row {
+      flex-direction: column;
+    }
+  }
+</style>

@@ -1,0 +1,61 @@
+// Detection: ChromaDB Local Vector Database Discovery
+// Description: Discovers ChromaDB persistence files on managed endpoints.
+//              ChromaDB stores data in chroma.sqlite3 plus UUID-named
+//              subdirectories containing HNSW index binaries.
+// MITRE: T1213 (Data from Information Repositories)
+// Severity: Medium
+// Tables: DeviceFileEvents
+// Minimum License: Defender for Endpoint Plan 2
+// Author: shadow-ai-hunting
+// Last Updated: 2026-06-10
+
+DeviceFileEvents
+| where Timestamp > ago(30d)
+| where FileName in~ (
+    "chroma.sqlite3",
+    "data_level0.bin",
+    "header.bin",
+    "length.bin",
+    "link_lists.bin"
+)
+    or FolderPath has_any (
+        "chroma_db",
+        "chroma/",
+        "chromadb",
+        "vdb_latest",
+        "persist_directory",
+        "chroma_data"
+    )
+| extend ArtifactType = case(
+    FileName == "chroma.sqlite3", "ChromaDB Metadata Database",
+    FileName == "data_level0.bin", "HNSW Vector Index (Level 0)",
+    FileName == "header.bin", "HNSW Index Header",
+    FileName == "length.bin", "HNSW Entry Lengths",
+    FileName == "link_lists.bin", "HNSW Graph Links",
+    "ChromaDB Related File"
+)
+| summarize
+    FileCount = count(),
+    ArtifactTypes = make_set(ArtifactType),
+    TotalSizeBytes = sum(FileSize),
+    FirstSeen = min(Timestamp),
+    LastSeen = max(Timestamp),
+    Devices = dcount(DeviceName)
+    by DeviceName,
+       InitiatingProcessAccountName,
+       FolderPath,
+       FileName
+| extend TotalSizeMB = round(TotalSizeBytes / 1048576.0, 2)
+| project
+    Timestamp = LastSeen,
+    DeviceName,
+    User = InitiatingProcessAccountName,
+    FolderPath,
+    FileName,
+    ArtifactTypes,
+    FileCount,
+    TotalSizeMB,
+    FirstSeen,
+    LastSeen,
+    Devices
+| order by LastSeen desc

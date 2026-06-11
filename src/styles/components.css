@@ -1,0 +1,89 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: var(--radius);
+  padding: 0.62rem 1.15rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  transition: 0.2s ease;
+}
+
+.btn:hover {
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid color-mix(in srgb, var(--accent), #fff 10%);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-hover);
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-soft);
+}
+
+.panel {
+  background: color-mix(in srgb, var(--surface), transparent 4%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.code-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  padding: 0.5rem 0.85rem;
+}
+
+.copy-btn {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-soft);
+  padding: 0.3rem 0.65rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.copy-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.copy-btn.copied {
+  border-color: color-mix(in srgb, var(--success), transparent 30%);
+  color: var(--success);
+}
+
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 2.25rem 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}

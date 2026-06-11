@@ -1,0 +1,57 @@
+// Detection: API Key Storage in .env Files (AI Directories)
+// Description: Detects creation or modification of .env files in
+//              directories associated with AI/LLM projects. These
+//              files commonly store API keys for OpenAI, Anthropic,
+//              DeepSeek, and other LLM providers.
+// MITRE: T1552.001 (Credentials in Files), T1005 (Data from Local System)
+// Severity: High
+// Tables: DeviceFileEvents
+// Minimum License: Defender for Endpoint Plan 2
+// Author: shadow-ai-hunting
+// Last Updated: 2026-06-10
+
+DeviceFileEvents
+| where Timestamp > ago(30d)
+| where (FileName == ".env"
+    or FileName endswith ".env.local"
+    or FileName endswith ".env.development"
+    or FileName endswith ".env.production")
+| where FolderPath has_any (
+    // AI/LLM project indicators
+    "aider", "claude", "langchain", "llm", "openai",
+    "anthropic", "agent", "rag", "vector", "embedding",
+    "copilot", "cursor", "windsurf", "crewai", "autogen",
+    "llamaindex", "chromadb", "faiss", "vllm", "ollama",
+    // Generic project paths that often contain AI work
+    "ai-", "ml-", "gen-ai", "genai"
+)
+| extend RiskContext = case(
+    FolderPath has_any ("anthropic", "claude"), "Anthropic API Keys Likely",
+    FolderPath has_any ("openai", "gpt"), "OpenAI API Keys Likely",
+    FolderPath has "deepseek", "DeepSeek API Keys Likely",
+    FolderPath has "aider", "Aider Config (multi-provider keys)",
+    FolderPath has_any ("langchain", "llamaindex"), "Framework Config (multi-provider keys)",
+    "Potential LLM API Keys"
+)
+| summarize
+    FileCount = count(),
+    RiskContexts = make_set(RiskContext),
+    FirstSeen = min(Timestamp),
+    LastSeen = max(Timestamp)
+    by DeviceName,
+       InitiatingProcessAccountName,
+       FolderPath,
+       FileName,
+       ActionType
+| project
+    Timestamp = LastSeen,
+    DeviceName,
+    User = InitiatingProcessAccountName,
+    FolderPath,
+    FileName,
+    ActionType,
+    RiskContexts,
+    FileCount,
+    FirstSeen,
+    LastSeen
+| order by LastSeen desc

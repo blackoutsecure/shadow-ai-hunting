@@ -1,0 +1,62 @@
+// Detection: Local LLM API Network Listeners
+// Description: Detects network activity on ports commonly used by
+//              local LLM inference engines and agent services.
+//              Ollama (11434), vLLM (8000), agentmemory (3113),
+//              and generic inference ports (8080, 5000).
+// MITRE: T1071.001 (Web Protocols), T1571 (Non-Standard Port)
+// Severity: Low-Medium
+// Tables: DeviceNetworkEvents
+// Minimum License: Defender for Endpoint Plan 2
+// Author: shadow-ai-hunting
+// Last Updated: 2026-06-10
+
+let LLMPorts = dynamic([
+    11434,  // Ollama default
+    8000,   // vLLM default
+    8080,   // Common inference / LM Studio
+    3113,   // agentmemory service
+    5000,   // Flask-based inference servers
+    8265,   // Ray Dashboard (vLLM scaling)
+    6333,   // Qdrant vector DB
+    8888,   // Jupyter with LLM kernels
+    19530   // Milvus vector DB
+]);
+DeviceNetworkEvents
+| where Timestamp > ago(7d)
+| where LocalPort in (LLMPorts)
+| where ActionType in ("ListeningConnectionCreated", "ConnectionSuccess",
+                        "InboundConnectionAccepted")
+    or (RemoteIP in ("127.0.0.1", "::1", "0.0.0.0")
+        and LocalPort in (LLMPorts))
+| extend ServiceHint = case(
+    LocalPort == 11434, "Ollama",
+    LocalPort == 8000, "vLLM / Inference API",
+    LocalPort == 8080, "Generic Inference / LM Studio",
+    LocalPort == 3113, "agentmemory Service",
+    LocalPort == 5000, "Flask Inference Server",
+    LocalPort == 8265, "Ray Dashboard (vLLM)",
+    LocalPort == 6333, "Qdrant Vector DB",
+    LocalPort == 8888, "Jupyter / Notebook",
+    LocalPort == 19530, "Milvus Vector DB",
+    strcat("Port ", tostring(LocalPort))
+)
+| summarize
+    Connections = count(),
+    Processes = make_set(InitiatingProcessFileName),
+    FirstSeen = min(Timestamp),
+    LastSeen = max(Timestamp)
+    by DeviceName,
+       InitiatingProcessAccountName,
+       LocalPort,
+       ServiceHint
+| project
+    Timestamp = LastSeen,
+    DeviceName,
+    User = InitiatingProcessAccountName,
+    Port = LocalPort,
+    ServiceHint,
+    Processes,
+    Connections,
+    FirstSeen,
+    LastSeen
+| order by Connections desc

@@ -1,0 +1,87 @@
+// Detection: AI Agent Memory and Configuration Files
+// Description: Discovers memory files, config files, and instruction
+//              files persisted by AI coding agents on disk. These files
+//              contain project context, architecture decisions, build
+//              commands, and accumulated agent learnings.
+// MITRE: T1083 (File and Directory Discovery), T1005 (Data from Local System)
+// Severity: Low-Medium (informational for inventory)
+// Tables: DeviceFileEvents
+// Minimum License: Defender for Endpoint Plan 2
+// Author: shadow-ai-hunting
+// Last Updated: 2026-06-10
+
+let AgentMemoryFiles = dynamic([
+    // Claude Code
+    "CLAUDE.md", "CLAUDE.local.md", "MEMORY.md",
+    // Cursor
+    ".cursorrules",
+    // GitHub Copilot
+    "copilot-instructions.md",
+    // Cross-agent standard
+    "AGENTS.md",
+    // Aider
+    ".aider.conf.yml", ".aider.chat.history.md", ".aider.input.history",
+    // Google Jules
+    "JULES.md",
+    // Windsurf (detected via directory below)
+    // agentmemory service
+    "agentmemory.json"
+]);
+let AgentMemoryDirs = dynamic([
+    ".cursor/rules",
+    ".cursor\\rules",
+    ".claude/agent-memory",
+    ".claude\\agent-memory",
+    ".windsurf/rules",
+    ".windsurf\\rules",
+    ".github/agents",
+    ".github\\agents",
+    "memories/"
+]);
+DeviceFileEvents
+| where Timestamp > ago(30d)
+| where FileName in~ (AgentMemoryFiles)
+    or FolderPath has_any (AgentMemoryDirs)
+| extend AgentTool = case(
+    FileName in~ ("CLAUDE.md", "CLAUDE.local.md", "MEMORY.md")
+        or FolderPath has ".claude", "Claude Code",
+    FileName == ".cursorrules"
+        or FolderPath has ".cursor", "Cursor",
+    FileName == "copilot-instructions.md"
+        or FolderPath has ".github/agents"
+        or FolderPath has ".github\\agents", "GitHub Copilot",
+    FileName == "AGENTS.md", "Cross-Agent Standard",
+    FileName has "aider", "Aider",
+    FileName == "JULES.md", "Google Jules",
+    FolderPath has ".windsurf", "Windsurf",
+    "Unknown Agent"
+)
+| extend MemoryType = case(
+    FileName endswith ".md", "Markdown Instructions",
+    FileName endswith ".yml", "YAML Configuration",
+    FileName endswith ".json", "JSON State",
+    FileName has "history", "Session History",
+    "Agent Configuration"
+)
+| summarize
+    FileCount = count(),
+    Agents = make_set(AgentTool),
+    MemoryTypes = make_set(MemoryType),
+    Files = make_set(FileName),
+    FirstSeen = min(Timestamp),
+    LastSeen = max(Timestamp)
+    by DeviceName,
+       InitiatingProcessAccountName,
+       FolderPath
+| project
+    Timestamp = LastSeen,
+    DeviceName,
+    User = InitiatingProcessAccountName,
+    FolderPath,
+    Agents,
+    MemoryTypes,
+    Files,
+    FileCount,
+    FirstSeen,
+    LastSeen
+| order by LastSeen desc

@@ -1,0 +1,58 @@
+---
+import '../styles/tokens.css';
+import '../styles/base.css';
+import '../styles/components.css';
+import { SITE } from '../lib/config';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = SITE.title,
+  description = SITE.description
+} = Astro.props;
+
+const base = import.meta.env.BASE_URL;
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).toString() : undefined;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="dark light" />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+    />
+    <title>{title}</title>
+
+    <script is:inline>
+      (function () {
+        try {
+          var stored = localStorage.getItem('theme');
+          var theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia('(prefers-color-scheme: light)').matches
+                ? 'light'
+                : 'dark';
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (_) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

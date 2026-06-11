@@ -1,0 +1,87 @@
+// Detection: Docker Containers Running AI Workloads
+// Description: Detects Docker and Podman commands that pull, run, or
+//              manage containers for AI inference, vector databases,
+//              and agent infrastructure.
+// MITRE: T1610 (Deploy Container), T1059 (Command and Scripting Interpreter)
+// Severity: Medium-High
+// Tables: DeviceProcessEvents
+// Minimum License: Defender for Endpoint Plan 2
+// Author: shadow-ai-hunting
+// Last Updated: 2026-06-10
+
+let AIContainerImages = dynamic([
+    // LLM inference
+    "vllm/vllm-openai",
+    "ollama/ollama",
+    "ghcr.io/ggerganov/llama.cpp",
+    "ghcr.io/huggingface/text-generation-inference",
+    "localai/localai",
+    // Vector databases
+    "chromadb/chroma",
+    "qdrant/qdrant",
+    "weaviate/weaviate",
+    "semitechnologies/weaviate",
+    "milvusdb/milvus",
+    "pgvector/pgvector",
+    // Agent infrastructure
+    "langchain",
+    "langserve"
+]);
+DeviceProcessEvents
+| where Timestamp > ago(30d)
+| where FileName in~ ("docker", "docker.exe", "podman", "podman.exe",
+                       "docker-compose", "docker-compose.exe",
+                       "nerdctl", "nerdctl.exe")
+| where ProcessCommandLine has_any (AIContainerImages)
+    or ProcessCommandLine has_any (
+        "huggingface",
+        "text-generation",
+        "vllm",
+        "ollama",
+        "chromadb",
+        "qdrant",
+        "weaviate",
+        "milvus",
+        "embedding",
+        "inference"
+    )
+| extend ContainerAction = case(
+    ProcessCommandLine has "run", "Container Run",
+    ProcessCommandLine has "pull", "Image Pull",
+    ProcessCommandLine has "build", "Image Build",
+    ProcessCommandLine has "compose up", "Compose Up",
+    ProcessCommandLine has "exec", "Container Exec",
+    ProcessCommandLine has "start", "Container Start",
+    "Other Docker Action"
+)
+| extend ImageHint = extract(@"(?:run|pull|build)\s+(?:--[^\s]+\s+)*([^\s]+/[^\s:]+)", 1, ProcessCommandLine)
+| extend ContainerCategory = case(
+    ProcessCommandLine has_any ("vllm", "ollama", "llama", "text-generation", "localai"), "LLM Inference",
+    ProcessCommandLine has_any ("chroma", "qdrant", "weaviate", "milvus", "pgvector"), "Vector Database",
+    ProcessCommandLine has_any ("langchain", "langserve", "embedding"), "Agent Framework",
+    "AI Related Container"
+)
+| summarize
+    ActionCount = count(),
+    Actions = make_set(ContainerAction),
+    Images = make_set(ImageHint),
+    Categories = make_set(ContainerCategory),
+    Commands = make_set(ProcessCommandLine, 5),
+    FirstSeen = min(Timestamp),
+    LastSeen = max(Timestamp)
+    by DeviceName,
+       InitiatingProcessAccountName,
+       FileName
+| project
+    Timestamp = LastSeen,
+    DeviceName,
+    User = InitiatingProcessAccountName,
+    ContainerEngine = FileName,
+    Categories,
+    Images,
+    Actions,
+    ActionCount,
+    Commands,
+    FirstSeen,
+    LastSeen
+| order by ActionCount desc

@@ -1,0 +1,74 @@
+// Detection: Local LLM Inference Engine Processes
+// Description: Detects processes associated with locally running LLM
+//              inference engines including Ollama, vLLM, llama.cpp,
+//              LM Studio, and llamafile.
+// MITRE: T1059 (Command and Scripting Interpreter), T1204.002 (Malicious File)
+// Severity: Medium
+// Tables: DeviceProcessEvents
+// Minimum License: Defender for Endpoint Plan 2
+// Author: shadow-ai-hunting
+// Last Updated: 2026-06-10
+
+DeviceProcessEvents
+| where Timestamp > ago(30d)
+| where FileName in~ (
+    "ollama", "ollama.exe",
+    "vllm", "vllm.exe",
+    "llama-server", "llama-server.exe",
+    "llama-cli", "llama-cli.exe",
+    "llamafile", "llamafile.exe",
+    "lm-studio", "lmstudio", "LM Studio.exe",
+    "koboldcpp", "koboldcpp.exe",
+    "text-generation-server",
+    "localai", "local-ai"
+)
+    or ProcessCommandLine has_any (
+        "ollama serve",
+        "ollama run",
+        "ollama pull",
+        "ollama list",
+        "vllm.entrypoints",
+        "vllm-openai",
+        "llama-server --port",
+        "llama-server -m",
+        "--model meta-llama",
+        "--model Qwen",
+        "--model mistral",
+        "--model deepseek",
+        "--model codellama",
+        "from vllm import"
+    )
+| extend Runtime = case(
+    FileName has "ollama", "Ollama",
+    FileName has "vllm" or ProcessCommandLine has "vllm", "vLLM",
+    FileName has "llama-server" or FileName has "llama-cli", "llama.cpp",
+    FileName has "llamafile", "llamafile",
+    FileName has "lm-studio" or FileName has "lmstudio" or FileName has "LM Studio", "LM Studio",
+    FileName has "koboldcpp", "KoboldCpp",
+    FileName has "text-generation", "HF TGI",
+    FileName has "localai", "LocalAI",
+    "Unknown LLM Runtime"
+)
+| extend ModelHint = extract(@"--model\s+([^\s]+)", 1, ProcessCommandLine)
+| summarize
+    RunCount = count(),
+    CommandLines = make_set(ProcessCommandLine, 5),
+    Models = make_set(ModelHint),
+    FirstSeen = min(Timestamp),
+    LastSeen = max(Timestamp)
+    by DeviceName,
+       InitiatingProcessAccountName,
+       FileName,
+       Runtime
+| project
+    Timestamp = LastSeen,
+    DeviceName,
+    User = InitiatingProcessAccountName,
+    Runtime,
+    Process = FileName,
+    Models,
+    RunCount,
+    CommandLines,
+    FirstSeen,
+    LastSeen
+| order by RunCount desc
